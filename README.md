@@ -7,8 +7,7 @@
 ```
 - competition name
   - README.md # 概要等
-  - solution
-    - xx-place-solution.md # 簡単なソリューションまとめ
+  - top-solution.md # 簡単な上位ソリューションまとめ
   - notebook
     - piyopiyo.ipynb # EDA、予測結果の可視化等
   - code
