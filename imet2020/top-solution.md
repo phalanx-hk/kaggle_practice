@@ -1,0 +1,34 @@
+# 1st place (DeNA)
+- solution1
+  - model: seresnext101, resnest50, regnetY-1.2gf
+  - loss: bce(?)
+  - inference: concatenate output feature vector(3072 dim), then apply knn voting with it
+  - public lb: 0.769, private: 0.722
+- solution2
+  - model: resnest101
+  - loss: reduced focal loss + symmetric lovasz loss
+    - reduced focal loss: [https://arxiv.org/abs/1903.01347](https://arxiv.org/abs/1903.01347)
+    - lovasz loss: [https://arxiv.org/abs/1705.08790](https://arxiv.org/abs/1705.08790)
+    - symmetric lovasz loss: [https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69053](https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69053)
+  - public lb: 0.761, private: 0.715
+- solution3
+  - model: seresnext101 with attention branch network
+    - attention branch network: [https://arxiv.org/abs/1812.10025](https://arxiv.org/abs/1812.10025)
+  - loss: bce(?)
+  - public lb: 0.761, private lb: 0.712
+- final solution
+  - weighted average of above three solutions
+  - postprocess (unknown)
+  - public lb: 0.782, private lb: 0.732
+
+# 2nd place (DeepBlueAI)
+- model: resnest101
+- loss: binary cross entropy loss
+- scheduler: CosineAnnealingLR
+- augmentation: auto augment, cutmix, flip, random erasing
+- train 5 folds, ensemble 5 models using geometric mean
+- single fold
+  - flip + random erasing: public lb: 0.743
+  - +auto augment: public lb: 0.751 (+0.008)
+  - +cutmix: public lb: 0.758 (+0.007)
+- 5fold result: public lb: 0.771, private lb: 0.726
