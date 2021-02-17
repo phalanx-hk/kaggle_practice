@@ -1,0 +1,9 @@
+numpy==1.18.5
+loguru==0.5.3
+opencv_python_headless==4.4.0.40
+iterative-stratification==0.1.6
+mlcrate==0.2.0
+albumentations==0.4.6
+torch==1.7.1
+torchvision==0.8.2
+timm==0.2.1
