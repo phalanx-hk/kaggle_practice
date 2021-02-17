@@ -1,4 +1,5 @@
 import os
+import pprint
 import atexit
 from argparse import ArgumentParser
 
@@ -43,6 +44,7 @@ def main():
     exp_num = find_exp_num(log_path=config.log_path)
     exp_num = str(exp_num).zfill(3)
     config.weight_path = os.path.join(config.weight_path, f'exp_{exp_num}')
+    os.makedirs(config.weight_path, exist_ok=True)
     OmegaConf.save(config, os.path.join(
         config.config_path, f'exp_{exp_num}.yaml'))
     logger, csv_logger = get_logger(config, exp_num)
@@ -53,9 +55,8 @@ def main():
     train_df = pd.read_csv(os.path.join(config.root, 'train.csv'))
     X = train_df['id']
     X = np.array([os.path.join(config.root, 'train', f'{i}.png') for i in X])
-    y = train_df['attribute_ids']
-    y = np.array([list(map(int, i.split(' '))) for i in y])
-    y = [np.eye(3474)[i].sum(0) for i in y]
+    y = np.load(os.path.join(config.root, 'labels.npy'))
+    print(X.shape, y.shape)
 
     transform = eval(config.transform.name)(config.transform.size)
     logger.info(f'augmentation: {transform}')
@@ -79,31 +80,31 @@ def main():
             model.classifier = nn.Linear(
                 model.classifier.in_features, config.train.num_labels)
         model = model.cuda()
-        optimizer = eval(model.optimizer.name)(
+        optimizer = eval(config.optimizer.name)(
             model.parameters(), lr=config.optimizer.lr)
-        scheduler = eval(model.scheduler.name)(
-            optimizer, config.epoch // config.scheduler.cycle)
+        scheduler = eval(config.scheduler.name)(
+            optimizer, config.train.epoch // config.scheduler.cycle)
         criterion = eval(config.loss)()
         scaler = GradScaler()
 
         best_acc = 0
         best_loss = 1e10
-        mb = master_bar(range(config.epoch))
+        mb = master_bar(range(config.train.epoch))
         for epoch in mb:
             timer.add('train')
             train_loss, train_acc = train(
-                config, model, transform, strong_transform, train_loader, optimizer, criterion, mb, epoch, scaler)
+                config, model, transform['torch_train'], strong_transform, train_loader, optimizer, criterion, mb, epoch, scaler)
             train_time = timer.fsince('train')
 
             timer.add('val')
             val_loss, val_acc = validate(
-                config, model, transform, val_loader, criterion, mb, epoch)
+                config, model, transform['torch_val'], val_loader, criterion, mb, epoch)
             val_time = timer.fsince('val')
 
             output1 = 'epoch: {} train_time: {} validate_time: {}'.format(
                 epoch, train_time, val_time)
             output2 = 'train_loss: {:.3f} train_acc: {:.3f} val_loss: {:.3f} val_acc: {:.3f}'.format(
-                epoch + 1, train_loss, train_acc, val_loss, val_acc)
+                train_loss, train_acc, val_loss, val_acc)
             logger.info(output1)
             logger.info(output2)
             mb.write(output1)
@@ -143,19 +144,19 @@ def train(config, model, transform, strong_transform, loader, optimizer, criteri
         images = transform(images)
         if epoch < config.train.epoch - 5:
             images, labels_a, labels_b, lam = strong_transform(
-                images, **config.strong_transform.params)
+                images, labels, **config.strong_transform.params)
             with autocast():
                 logits = model(images)
                 loss = criterion(logits, labels_a) * lam + \
                     criterion(logits, labels_b) * (1 - lam)
-                loss /= config.train.accumulte
+                loss /= config.train.accumulate
         else:
             with autocast():
                 logits = model(images)
-                loss = criterion(logits, labels) / config.train.accumulte
+                loss = criterion(logits, labels) / config.train.accumulate
 
         scaler.scale(loss).backward()
-        if not (it + 1) % config.train.accumulte:
+        if not (it + 1) % config.train.accumulate:
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
@@ -194,7 +195,7 @@ def validate(config, model, transform, loader, criterion, mb, device):
         images = transform(images)
 
         logits = model(images)
-        loss = criterion(logits, labels) / config.train.accumulte
+        loss = criterion(logits, labels) / config.train.accumulate
 
         logits = (logits.sigmoid() > 0.5).cpu().numpy().astype(int)
         labels = labels.cpu().numpy().astype(int)

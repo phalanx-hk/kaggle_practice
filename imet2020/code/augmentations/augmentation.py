@@ -7,6 +7,7 @@ std = (0.229, 0.224, 0.225)  # RGB
 
 
 def met_transform1(size):
+    size = list(map(int, size.split(',')))
     transform = {
         'albu_train': A.Compose([
             A.RandomResizedCrop(size[0], size[1])

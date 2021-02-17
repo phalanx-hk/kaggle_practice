@@ -7,3 +7,4 @@ albumentations==0.4.6
 torch==1.7.1
 torchvision==0.8.2
 timm==0.2.1
+fastprogress==1.0.0

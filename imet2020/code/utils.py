@@ -20,7 +20,7 @@ def seed_everything(seed):
 
 
 def find_exp_num(log_path: str) -> int:
-    log_files = glob(f'{log_path}/*.csv')
+    log_files = glob(os.path.join(log_path, '*.csv'))
     if not len(log_files):
         return 1
     else:
@@ -31,14 +31,15 @@ def find_exp_num(log_path: str) -> int:
 
 
 def remove_abnormal_exp(log_path: str, config_path: str) -> None:
-    log_files = glob(f'{log_path}/*.csv')
+    log_files = glob(os.path.join(log_path, '*.csv'))
     for log_file in log_files:
         log_df = pd.read_csv(log_file)
         if len(log_df) == 0:
             exp_num = os.path.splitext(
                 log_file)[0].split('/')[-1].split('_')[-1]
-            os.remove(f'{log_path}/exp_{exp_num}*')  # remove .log/.csv
-            os.remove(f'{config_path}/exp_{exp_num}.yaml')
+            os.remove(os.path.join(log_path, f'exp_{exp_num}.log'))
+            os.remove(os.path.join(log_path, f'exp_{exp_num}.csv'))
+            os.remove(os.path.join(config_path, f'exp_{exp_num}.yaml'))
 
 
 def get_logger(config, exp_num):
