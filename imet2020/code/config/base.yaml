@@ -1,50 +1,50 @@
 seed: 2021
 log_path: ./log/
 config_path: ./config/
-weight_path: ~/weights/imet/
+weight_path: home/phalanx/weights/imet/
 header: epoch train_loss train_acc val_loss val_acc
 
-root: ~/dataset/imet/
+root: /home/phalanx/dataset/imet/
 
 train:
   num_labels: 3474
   n_splits: 5
-  epoch: 40
+  epoch: 100
   accumulate: 4
 
 transform:
   name: met_transform1
-  size: (320, 320)
+  size: 320,320
 
 strong_transform:
   name: resizemix
   params:
     alpha: 0.1
-    beta: 0.8
+    beta: 0.6
 
 
 train_loader:
-  batch_size: 32
+  batch_size: 96
   shuffle: True
   num_workers: 8
   pin_memory: False
   drop_last: True
 
 val_loader:
-  batch_size: 32
+  batch_size: 96
   shuffle: False
   num_workers: 8
   pin_memory: False
   drop_last: False
 
-model: resnet34
+model: resnest101e
 
 optimizer:
   name: Adam
-  lr: 0.0001
+  lr: 0.0005
   
 scheduler:
   name: CosineAnnealingWarmRestarts
   cycle: 2
 
-loss: nn.binary_cross_entropy_with_logits
+loss: nn.BCEWithLogitsLoss

@@ -19,6 +19,7 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from timm.models import *
 
 from dataset import MetDataset
+from losses import lovasz_hinge
 from augmentations import *
 from utils import find_exp_num, get_logger, remove_abnormal_exp, seed_everything, save_model
 
@@ -63,9 +64,11 @@ def main():
     strong_transform = eval(config.strong_transform.name)
     logger.info(f'strong augmentation: {config.strong_transform.name}')
 
-    mskf = MultilabelStratifiedKFold(
-        n_splits=config.train.n_splits, shuffle=True, random_state=config.seed)
-    for fold, (train_idx, val_idx) in enumerate(mskf.split(X, y)):
+    for fold in range(config.train.n_splits):
+        train_idx = np.load(os.path.join(
+            config.root, 'data', f'train_idx_fold{fold}.npy'))
+        val_idx = np.load(os.path.join(
+            config.root, 'data', f'val_idx_fold{fold}.npy'))[:1000]
         X_train, X_val = X[train_idx], X[val_idx]
         y_train, y_val = y[train_idx], y[val_idx]
         train_data = MetDataset(X_train, y_train, transform['albu_train'])
@@ -153,7 +156,8 @@ def train(config, model, transform, strong_transform, loader, optimizer, criteri
         else:
             with autocast():
                 logits = model(images)
-                loss = criterion(logits, labels) / config.train.accumulate
+                loss = criterion(logits, labels)
+                loss /= config.train.accumulate
 
         scaler.scale(loss).backward()
         if not (it + 1) % config.train.accumulate:
@@ -161,7 +165,7 @@ def train(config, model, transform, strong_transform, loader, optimizer, criteri
             scaler.update()
             optimizer.zero_grad()
 
-        logits = (logits.sigmoid() > 0.5).detach().cpu().numpy().astype(int)
+        logits = (logits.sigmoid() > 0.2).detach().cpu().numpy().astype(int)
         labels = labels.detach().cpu().numpy().astype(int)
         score = fbeta_score(labels, logits, beta=2, average='samples')
         scores.append(score)
@@ -197,7 +201,7 @@ def validate(config, model, transform, loader, criterion, mb, device):
         logits = model(images)
         loss = criterion(logits, labels) / config.train.accumulate
 
-        logits = (logits.sigmoid() > 0.5).cpu().numpy().astype(int)
+        logits = (logits.sigmoid() > 0.2).cpu().numpy().astype(int)
         labels = labels.cpu().numpy().astype(int)
         preds.append(logits)
         gt.append(labels)
