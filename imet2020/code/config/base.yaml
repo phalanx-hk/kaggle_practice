@@ -1,7 +1,7 @@
 seed: 2021
 log_path: ./log/
 config_path: ./config/
-weight_path: home/phalanx/weights/imet/
+weight_path: /home/phalanx/weights/imet/
 header: epoch train_loss train_acc val_loss val_acc
 
 root: /home/phalanx/dataset/imet/
@@ -45,6 +45,7 @@ optimizer:
   
 scheduler:
   name: CosineAnnealingWarmRestarts
+  eta_min: 0.00001
   cycle: 2
 
 loss: nn.BCEWithLogitsLoss

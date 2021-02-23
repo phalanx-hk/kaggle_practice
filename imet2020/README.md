@@ -34,6 +34,24 @@
   - country: 100
   - dimension: 5
 
+### my solution
+- model: nfnet-f2, rexnet200
+- image_size: 512,512 (resize)
+- loss: superloss(bce)
+- optimizer: adam, lr=1e-3
+- scheduler: CosineAnnealingWarmRestarts, eta_min=1e-5
+- epoch: 
+  - nfnet-f2: 15, no warmup restart
+  - rexnet200: 50, two times warmup restart
+- train val split: multilabelstratified, 5-fold
+- augmentaiton: hflip, colorjitter, rotate, shift
+- strong augmentation: resizemix
+
+| model     | cv    | public | private |
+| :-------: | :---: | :----: | :-----: |
+| nfnet-f2  | 0.711 | 0.762  | N/A     |
+| rexnet200 | 0.675 | 0.731  | N/A     |
+
 
 ## link
 - competition: [https://www.kaggle.com/c/imet-2020-fgvc7/overview](https://www.kaggle.com/c/imet-2020-fgvc7/overview)

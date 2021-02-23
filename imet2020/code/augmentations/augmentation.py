@@ -20,7 +20,7 @@ def met_transform1(size):
             T.Normalize(mean, std),
         ]),
         'albu_val': A.Compose([
-            A.Resize(size[0], size[1]),
+            A.Resize(size[0], size[1])
         ]),
         'torch_val': T.Compose([
             T.ConvertImageDtype(torch.float),
