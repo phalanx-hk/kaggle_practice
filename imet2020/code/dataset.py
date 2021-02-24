@@ -14,16 +14,12 @@ class MetDataset(Dataset):
         return len(self.X)
 
     def __getitem__(self, idx):
-        if np.random.rand() < 0 and self.mode == 'train':
-            image, label = self.load_mosaic(idx)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = cv2.resize(image, (320, 320))
-        else:
-            image = cv2.imread(self.X[idx])
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = self.transform(image=image)['image']
-            label = self.y[idx] if self.y is not None else None
+        image = cv2.imread(self.X[idx])
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = self.transform(image=image)['image']
         image = image.transpose(2, 0, 1)
+
+        label = self.y[idx] if self.y is not None else None
         if label is not None:
             return image, label
         else:
